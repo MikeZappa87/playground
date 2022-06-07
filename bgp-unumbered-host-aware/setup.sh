@@ -131,6 +131,23 @@ ip netns exec host0 ip link set proxy0 master cni0
 ip netns exec host0 ipvsadm -A -t 10.96.0.10:80 -s rr
 ip netns exec host0 ipvsadm -a -t 10.96.0.10:80 -r 10.240.0.2 -m
 
+ip netns exec host0 sysctl -w net.ipv4.vs.conntrack=1
+ip netns exec host0 modprobe br_netfilter
+ip netns exec host0 sysctl -w net.bridge.bridge-nf-call-iptables=1
+
+ip netns exec host1 sysctl -w net.ipv4.vs.conntrack=1
+ip netns exec host1 modprobe br_netfilter
+ip netns exec host1 sysctl -w net.bridge.bridge-nf-call-iptables=1
+
+ip netns exec host2 sysctl -w net.ipv4.vs.conntrack=1
+ip netns exec host2 modprobe br_netfilter
+ip netns exec host2 sysctl -w net.bridge.bridge-nf-call-iptables=1
+
+# Looks like I need to do this on the same host as IPVS
+ip netns exec host0 iptables -t nat -A POSTROUTING -s 10.240.0.2/32 -j MASQUERADE
+
+ip netns exec host0 ip link set cs0-veth0 type bridge_slave hairpin on
+
 function deployPod(){
     podman run -it -d --privileged --name $1 --net ns:/run/netns/$1 \
     -v ${PWD}/$1.bgp.conf:/etc/frr/bgpd.conf \
@@ -147,6 +164,4 @@ deployPod "host0"
 deployPod "host1"
 deployPod "host2"
 
-#podman run -it -d --name ws0 --net ns:/run/netns/host0 python python -m http.server 80
-
-#podman run -it -d --name cs0-ws --net ns:/run/netns/cs0 python python -m http.server 80
+ip netns exec cs0 python3 -m http.server 80
