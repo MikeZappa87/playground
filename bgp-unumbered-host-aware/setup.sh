@@ -54,21 +54,18 @@ ip netns exec host0 ip link set eth0 up
 ip netns exec host0 ip link set lo up
 ip netns exec host0 ip route add default dev eth0
 ip netns exec host0 ip link add cni0 type bridge
-ip netns exec host0 ip addr add 10.240.0.1/24 dev cni0
 ip netns exec host0 ip link set cni0 up
 
 ip netns exec host1 ip link set eth0 up
 ip netns exec host1 ip link set lo up
 ip netns exec host1 ip route add default dev eth0
 ip netns exec host1 ip link add cni0 type bridge
-ip netns exec host1 ip addr add 10.240.1.1/24 dev cni0
 ip netns exec host1 ip link set cni0 up
 
 ip netns exec host2 ip link set eth0 up
 ip netns exec host2 ip link set lo up
 ip netns exec host2 ip route add default dev eth0
 ip netns exec host2 ip link add cni0 type bridge
-ip netns exec host2 ip addr add 10.240.2.1/24 dev cni0
 ip netns exec host2 ip link set cni0 up
 
 ip netns add cs0
@@ -76,8 +73,7 @@ ip netns exec host0 ip link add cs0-veth0 type veth peer name eth0 netns cs0
 ip netns exec host0 ip link set cs0-veth0 master cni0
 ip netns exec host0 ip link set cs0-veth0 up
 
-ip netns exec cs0 ip addr add 10.240.0.2/24 dev eth0
-ip netns exec cs0 sysctl -w net.ipv4.conf.eth0.arp_notify=1
+ip netns exec cs0 ip addr add 10.240.0.3/24 dev eth0
 ip netns exec cs0 ip link set eth0 up
 ip netns exec cs0 ip route add default dev eth0
 
@@ -86,8 +82,7 @@ ip netns exec host1 ip link add cs1-veth0 type veth peer name eth0 netns cs1
 ip netns exec host1 ip link set cs1-veth0 master cni0
 ip netns exec host1 ip link set cs1-veth0 up
 
-ip netns exec cs1 ip addr add 10.240.1.2/24 dev eth0
-ip netns exec cs1 sysctl -w net.ipv4.conf.eth0.arp_notify=1
+ip netns exec cs1 ip addr add 10.240.0.4/24 dev eth0
 ip netns exec cs1 ip link set eth0 up
 ip netns exec cs1 ip route add default dev eth0
 
@@ -96,8 +91,7 @@ ip netns exec host2 ip link add cs2-veth0 type veth peer name eth0 netns cs2
 ip netns exec host2 ip link set cs2-veth0 master cni0
 ip netns exec host2 ip link set cs2-veth0 up
 
-ip netns exec cs2 ip addr add 10.240.2.2/24 dev eth0
-ip netns exec cs2 sysctl -w net.ipv4.conf.eth0.arp_notify=1
+ip netns exec cs2 ip addr add 10.240.0.5/24 dev eth0
 ip netns exec cs2 ip link set eth0 up
 ip netns exec cs2 ip route add default dev eth0
 
@@ -128,26 +122,6 @@ ip netns exec host0 ip link set proxy0 up
 ip netns exec host0 ip addr add 10.96.0.10/32 dev proxy0
 ip netns exec host0 ip link set proxy0 master cni0
 
-ip netns exec host0 ipvsadm -A -t 10.96.0.10:80 -s rr
-ip netns exec host0 ipvsadm -a -t 10.96.0.10:80 -r 10.240.0.2 -m
-
-ip netns exec host0 sysctl -w net.ipv4.vs.conntrack=1
-ip netns exec host0 modprobe br_netfilter
-ip netns exec host0 sysctl -w net.bridge.bridge-nf-call-iptables=1
-
-ip netns exec host1 sysctl -w net.ipv4.vs.conntrack=1
-ip netns exec host1 modprobe br_netfilter
-ip netns exec host1 sysctl -w net.bridge.bridge-nf-call-iptables=1
-
-ip netns exec host2 sysctl -w net.ipv4.vs.conntrack=1
-ip netns exec host2 modprobe br_netfilter
-ip netns exec host2 sysctl -w net.bridge.bridge-nf-call-iptables=1
-
-# Looks like I need to do this on the same host as IPVS
-ip netns exec host0 iptables -t nat -A POSTROUTING -s 10.240.0.2/32 -j MASQUERADE
-
-ip netns exec host0 ip link set cs0-veth0 type bridge_slave hairpin on
-
 function deployPod(){
     podman run -it -d --privileged --name $1 --net ns:/run/netns/$1 \
     -v ${PWD}/$1.bgp.conf:/etc/frr/bgpd.conf \
@@ -164,4 +138,5 @@ deployPod "host0"
 deployPod "host1"
 deployPod "host2"
 
-ip netns exec cs0 python3 -m http.server 80
+#ip netns exec cs0 python3 -m http.server 80
+#ip netns exec host2 ip route add 0.0.0.0/0 via inet6 fe80:: dev eth0
