@@ -75,6 +75,7 @@ ip netns exec host0 ip link set cs0-veth0 up
 
 ip netns exec cs0 ip addr add 10.240.0.3/24 dev eth0
 ip netns exec cs0 ip link set eth0 up
+ip netns exec cs0 ip link set lo up
 ip netns exec cs0 ip route add default dev eth0
 
 ip netns add cs1
@@ -84,6 +85,7 @@ ip netns exec host1 ip link set cs1-veth0 up
 
 ip netns exec cs1 ip addr add 10.240.0.4/24 dev eth0
 ip netns exec cs1 ip link set eth0 up
+ip netns exec cs1 ip link set lo up
 ip netns exec cs1 ip route add default dev eth0
 
 ip netns add cs2
@@ -93,6 +95,7 @@ ip netns exec host2 ip link set cs2-veth0 up
 
 ip netns exec cs2 ip addr add 10.240.0.5/24 dev eth0
 ip netns exec cs2 ip link set eth0 up
+ip netns exec cs2 ip link set lo up
 ip netns exec cs2 ip route add default dev eth0
 
 ip netns exec host0 ip addr add 172.16.1.10/32 dev lo
@@ -113,9 +116,9 @@ ip netns exec host2 ip link set center.vxlan0 master cni0
 ip netns exec host2 ip link set lo up
 ip netns exec host2 ip link set center.vxlan0 up
 
-ip netns exec host0 sysctl -w net.ipv4.ip_forward=1
-ip netns exec host1 sysctl -w net.ipv4.ip_forward=1
-ip netns exec host2 sysctl -w net.ipv4.ip_forward=1
+#ip netns exec host0 sysctl -w net.ipv4.ip_forward=1
+#ip netns exec host1 sysctl -w net.ipv4.ip_forward=1
+#ip netns exec host2 sysctl -w net.ipv4.ip_forward=1
 
 ip netns exec host0 ip link add proxy0 type dummy
 ip netns exec host0 ip link set proxy0 up
