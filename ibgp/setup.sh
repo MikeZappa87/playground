@@ -3,6 +3,7 @@
 
 ip netns add ispA
 ip netns add ispB
+ip netns add ispC
 ip netns add r0
 ip netns add r1
 ip netns add r2
@@ -17,6 +18,13 @@ ip netns exec r0 ip addr add 169.254.10.1/30 dev eth0-ispA
 ip netns exec ispB ip link add eth0 type veth peer name eth0-ispB netns r2
 ip netns exec ispB ip link set eth0 up
 ip netns exec r2 ip link set eth0-ispB up
+
+ip netns exec ispC ip link add eth0 type veth peer name eth0-ispC netns r1
+ip netns exec ispC ip link set eth0 up
+ip netns exec r1 ip link set eth0-ispC up
+
+ip netns exec ispC ip addr add 169.254.50.2/30 dev eth0
+ip netns exec r1 ip addr add 169.254.50.1/30 dev eth0-ispC
 
 ip netns exec ispB ip addr add 169.254.40.2/30 dev eth0
 ip netns exec r2 ip addr add 169.254.40.1/30 dev eth0-ispB
@@ -38,6 +46,7 @@ ip netns exec r2 ip link set eth0 up
 
 ip netns exec ispA ip link set lo up
 ip netns exec ispB ip link set lo up
+ip netns exec ispC ip link set lo up
 
 ip netns exec r0 ip link set lo up
 ip netns exec r0 ip addr add 2.2.2.2/32 dev lo
@@ -46,8 +55,9 @@ ip netns exec r1 ip addr add 3.3.3.3/32 dev lo
 ip netns exec r2 ip link set lo up
 ip netns exec r2 ip addr add 4.4.4.4/32 dev lo
 
-ip netns exec ispA ip addr add 1.1.1.1/24 dev lo
-ip netns exec ispB ip addr add 5.5.5.5/24 dev lo
+ip netns exec ispA ip addr add 1.1.1.1/24 dev eth0
+ip netns exec ispB ip addr add 5.5.5.5/24 dev eth0
+ip netns exec ispC ip addr add 8.8.8.8/24 dev eth0
 
 ip netns exec r0 sysctl -w net.ipv4.ip_forward=1
 ip netns exec r1 sysctl -w net.ipv4.ip_forward=1
@@ -70,6 +80,9 @@ function deployPodWithIGP(){
 
 deployPod "ispA"
 deployPod "ispB"
+deployPod "ispC"
 deployPodWithIGP "r0"
 deployPodWithIGP "r1"
 deployPodWithIGP "r2"
+
+#ip netns exec ispC python3 -m http.server 80

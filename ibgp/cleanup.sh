@@ -6,6 +6,9 @@ podman rm ispA
 podman kill ispB
 podman rm ispB
 
+podman kill ispC
+podman rm ispC
+
 podman kill r0
 podman rm r0
 
