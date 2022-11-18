@@ -67,6 +67,27 @@ ip netns exec cs0 arp -s 10.240.0.2 ee:ee:ee:ee:ee dev eth0
 ip netns exec cs1 arp -s 169.254.1.1 ee:ee:ee:ee:ee:ee
 ip netns exec cs1 arp -s 10.240.1.2 ee:ee:ee:ee:ee dev eth0
 
+ip netns exec left0 ip link add dummy0 type dummy
+ip netns exec left0 ip link set dummy0 up
+ip netns exec left0 ip addr add 10.96.0.10/32 dev dummy0
+
+ip netns exec right0 ip link add dummy0 type dummy
+ip netns exec right0 ip link set dummy0 up
+ip netns exec right0 ip addr add 10.96.0.10/32 dev dummy0
+
+ip netns exec left0 ipvsadm -A -t 10.96.0.10:80 -s rr
+ip netns exec left0 ipvsadm -a -t 10.96.0.10:80 -r 10.240.0.2 -m
+
+ip netns exec right0 ipvsadm -A -t 10.96.0.10:80 -s rr
+ip netns exec right0 ipvsadm -a -t 10.96.0.10:80 -r 10.240.1.2 -m
+
+ip netns add customer
+
+ip netns exec customer ip link add eth0 type veth peer name swp2 netns spine0
+ip netns exec spine0 ip link set swp2 master cni0
+ip netns exec spine0 ip link set swp2 up
+ip netns exec customer ip link set eth0 up
+ip netns exec customer ip addr add 172.16.32.4/24 dev eth0
 
 function deployPod(){
     podman run -it -d --privileged --name $1 --net ns:/run/netns/$1 \
@@ -77,3 +98,4 @@ function deployPod(){
 
 deployPod "left0"
 deployPod "right0"
+deployPod "customer"
