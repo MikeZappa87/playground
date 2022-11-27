@@ -88,6 +88,21 @@ ip netns exec spine0 ip link set swp2 master cni0
 ip netns exec spine0 ip link set swp2 up
 ip netns exec customer ip link set eth0 up
 ip netns exec customer ip addr add 172.16.32.4/24 dev eth0
+ip netns exec customer ip addr add 192.168.10.1/24 dev eth0
+ip netns exec customer ip link set lo up
+ip netns exec customer sysctl -w net.ipv4.ip_forward=1
+
+ip netns exec left0 iptables -t nat -A POSTROUTING -o eth0 -j SNAT --to 172.16.32.2
+ip netns exec right0 iptables -t nat -A POSTROUTING -o eth0 -j SNAT --to 172.16.32.3
+
+ip link add test0 type veth peer name internet0 netns spine0
+ip link set test0 up
+ip netns exec spine0 ip link set internet0 master cni0
+ip netns exec spine0 ip link set internet0 up
+
+ip netns exec spine0 ip addr add 192.168.0.9/24 dev internet0
+ip addr add 192.168.0.10/24 dev test0
+ip netns exec spine0 ip route add default via 192.168.0.8 dev internet0
 
 function deployPod(){
     podman run -it -d --privileged --name $1 --net ns:/run/netns/$1 \
